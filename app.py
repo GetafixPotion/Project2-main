@@ -80,6 +80,7 @@ mlp_model.fit(X_scaled, y, epochs=10, batch_size=32, verbose=0)
 # Initialize Dash app with Bootstrap
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "Churn Prediction App"
+server = app.server
 
 # Define the app layout
 app.layout = dbc.Container([
@@ -270,3 +271,4 @@ def predict_churn(n_clicks, al, ip, tc, tm, tcharge, csc):
 # Run server
 if __name__ == '__main__':
     app.run(debug=True)
+#server
