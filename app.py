@@ -86,69 +86,105 @@ app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 
 # Define the app layout
 app.layout = dbc.Container([
-    html.H2("Customer Churn Prediction", className="my-4 text-center"),
+    html.H2("Customer Churn Prediction", className="my-4 text-center text-primary"),
 
     dbc.Row([
         dbc.Col([
-            html.H4("Load and Display Data", className="mb-3"),
-            html.Button("Load Dataset", id='load-data-btn', n_clicks=0, className="btn btn-primary w-100 mb-2"),
-            html.Div(id='output-data-load', style={'marginTop': '10px'}),
-            html.Iframe(id='csv-iframe', srcDoc='', style={'width': '100%', 'height': '400px', 'display': 'none'}),
-            html.Hr(),
-            html.Button("Load Processed Data", id='load-processed-btn', n_clicks=0, className="btn btn-secondary w-100 mb-2"),
-            html.Div(id='output-processed-load', style={'marginTop': '10px'}),
-            html.Iframe(id='processed-iframe', srcDoc='', style={'width': '100%', 'height': '400px', 'display': 'none'}),
+            dbc.Card([
+                dbc.CardHeader("Data Display"),
+                dbc.CardBody([
+                    dbc.Button("Load Raw Dataset", id='load-data-btn', color="primary", className="mb-2 w-100"),
+                    html.Div(id='output-data-load'),
+                    html.Iframe(id='csv-iframe', srcDoc='', style={'width': '100%', 'height': '300px', 'display': 'none'}),
+
+                    dbc.Button("Load Processed Data", id='load-processed-btn', color="secondary", className="my-2 w-100"),
+                    html.Div(id='output-processed-load'),
+                    html.Iframe(id='processed-iframe', srcDoc='', style={'width': '100%', 'height': '300px', 'display': 'none'}),
+                ])
+            ])
         ], md=6),
 
         dbc.Col([
-            dbc.Label("Account Length", html_for="account_length"),
-            dbc.Input(id='account_length', type='number'),
+            dbc.Card([
+                dbc.CardHeader("Input Features"),
+                dbc.CardBody([
 
-            dbc.Label("Plan"),
-            dcc.Dropdown(
-                id='plan',
-                options=[{'label': 'Yes', 'value': 1}, {'label': 'No', 'value': 0}],
-                placeholder='Select...',
-                className="form-control"
-            ),
+                    html.Div([
+                        dbc.Label("Account Length"),
+                        dbc.Input(id='account_length', type='number'),
+                    ], className="mb-3"),
+
+                    html.Div([
+                        dbc.Label("Plan"),
+                        dcc.Dropdown(
+                            id='plan',
+                            options=[{'label': 'Yes', 'value': 1}, {'label': 'No', 'value': 0}],
+                            placeholder='Select...',
+                            className="form-control"
+                        )
+                    ], className="mb-3"),
+
+                    html.Div([
+                        dbc.Label("Customer Service Calls"),
+                        dbc.Input(id='cust_serv_calls', type='number'),
+                    ], className="mb-3"),
+
+                    html.Div([
+                        dbc.Label("Total Calls"),
+                        dbc.Input(id='total_calls', type='number'),
+                    ], className="mb-3"),
+
+                    html.Div([
+                        dbc.Label("Total Minutes"),
+                        dbc.Input(id='total_minutes', type='number'),
+                    ], className="mb-3"),
+
+                    html.Div([
+                        dbc.Label("Total Charge"),
+                        dbc.Input(id='total_charge', type='number'),
+                    ], className="mb-3"),
+
+                    dbc.Button("Predict Churn", id="predict-btn", color="danger", className="mt-3 w-100")
+                ])
+            ])
         ], md=6),
-    
-
-    dbc.Row([
-        dbc.Col([
-            dbc.Label("Customer Service Calls", html_for="cust_serv_calls"),
-            dbc.Input(id='cust_serv_calls', type='number'),
-        ], md=6),
-
-        dbc.Col([
-            dbc.Label("Total Calls", html_for="total_calls"),
-            dbc.Input(id='total_calls', type='number'),
-        ], md=6),
-
-        dbc.Col([
-            dbc.Label("Total Minutes", html_for="total_minutes"),
-            dbc.Input(id='total_minutes', type='number'),
-        ], md=6),
-
-        dbc.Col([
-            dbc.Label("Total Charge", html_for="total_charge"),
-            dbc.Input(id='total_charge', type='number'),
-        ], md=6),
-    ]),]),
-
-    dbc.Row([
-        dbc.Col([
-            dbc.Button("Predict Churn", id="predict-btn", color="primary", className="my-3"),
-        ], md=12),
     ]),
 
-    html.Hr(),
-    html.Div([
-        html.H4("Prediction Result", className="text-center"),
-        html.Div(id='prediction-result', className="text-center fs-4 fw-bold text-info", style={'border': '2px solid #ccc', 'padding': '10px', 'margin': '20px auto', 'max-width': '600px'})
-    ]),
-    
-])
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardHeader("Prediction Result"),
+                dbc.CardBody([
+                    html.Div(id='prediction-result', className="text-center fs-4 fw-bold text-info")
+                ])
+            ])
+        ])
+    ], className="my-4"),
+
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardHeader("Churn Statistics"),
+                dbc.CardBody([
+                    stats_layout
+                ])
+            ])
+        ])
+    ], className="mb-4"),
+
+    dbc.Row([
+        dbc.Col([
+            dbc.Card([
+                dbc.CardHeader("Churn Distribution Chart"),
+                dbc.CardBody([
+                    dcc.Graph(figure=churn_bar_chart)
+                ])
+            ])
+        ])
+    ])
+], fluid=True)
+
+
 
 @app.callback(
     Output('csv-iframe', 'srcDoc'),
