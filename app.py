@@ -81,11 +81,10 @@ mlp_model.fit(X_scaled, y, epochs=10, batch_size=32, verbose=0)
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
 app.title = "Churn Prediction App"
 
-# Layout with cards and responsive form
-app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
-
 # Define the app layout
 app.layout = dbc.Container([
+    dcc.Store(id='toggle-raw-data', data=False),
+    dcc.Store(id='toggle-processed-data', data=False),
     html.H2("Customer Churn Prediction", className="my-4 text-center text-primary"),
 
     dbc.Row([
@@ -184,21 +183,34 @@ app.layout = dbc.Container([
     ])
 ], fluid=True)
 
+@app.callback(
+    Output('toggle-raw-data', 'data'),
+    Input('load-data-btn', 'n_clicks'),
+    State('toggle-raw-data', 'data'),
+    prevent_initial_call=True
+)
+def toggle_raw(n_clicks, current_state):
+    return not current_state
 
+@app.callback(
+    Output('toggle-processed-data', 'data'),
+    Input('load-processed-btn', 'n_clicks'),
+    State('toggle-processed-data', 'data'),
+    prevent_initial_call=True
+)
+def toggle_processed(n_clicks, current_state):
+    return not current_state
 
 @app.callback(
     Output('csv-iframe', 'srcDoc'),
     Output('csv-iframe', 'style'),
-    Input('load-data-btn', 'n_clicks')
+    Input('toggle-raw-data', 'data')
 )
-def load_csv_in_iframe(n_clicks):
-    if n_clicks > 0:
-        # Read the CSV and convert to HTML table
+def load_csv_in_iframe(show):
+    if show:
         try:
             df = pd.read_csv(csv_file_path)
-            html_table = df.to_html(classes='table table-striped', index=False)  # Convert to HTML
-
-            # Display the iframe with the HTML table content
+            html_table = df.to_html(classes='table table-striped', index=False)
             return html_table, {'width': '100%', 'height': '400px', 'display': 'block'}
         except Exception as e:
             return f'Error loading CSV: {e}', {'display': 'none'}
@@ -207,10 +219,10 @@ def load_csv_in_iframe(n_clicks):
 @app.callback(
     Output('processed-iframe', 'srcDoc'),
     Output('processed-iframe', 'style'),
-    Input('load-processed-btn', 'n_clicks'),
+    Input('toggle-processed-data', 'data')
 )
-def load_processed_csv(n_clicks):
-    if n_clicks > 0:
+def load_processed_csv(show):
+    if show:
         try:
             df = pd.read_csv(Procesed_data_csv)
             html_table = df.to_html(classes='table table-striped', index=False)
@@ -232,33 +244,29 @@ def load_processed_csv(n_clicks):
     State('plan', 'value')
 )
 def predict_churn(n_clicks, al, ip, tc, tm, tcharge, csc):
-    # Ensure inputs are not None or empty
-    if n_clicks is None or n_clicks == 0:
-        return ""  # No prediction if button hasn't been clicked yet
-    
+    # Only proceed if button was clicked at least once
+    if not n_clicks or n_clicks < 1:
+        return ""  # No prediction yet
+
+    # Ensure inputs are all provided
     if None in [al, ip, tc, tm, tcharge, csc] or '' in [al, ip, tc, tm, tcharge, csc]:
         return "Error: Please fill in all input fields."
 
     try:
-        # Reshape input data for prediction
-        input_data = np.array([[al, ip, tc, tm, tcharge, csc]])
-
-        # Ensure input data is scaled correctly
+        # Reshape and scale input
+        feature_names =['Account length', 'Customer service calls', 'Total Calls', 'Total Minutes', 'Total Charge', 'Plan']
+        input_data = pd.DataFrame([[al, ip, tc, tm, tcharge, csc]], columns=feature_names)
         input_scaled = scaler.transform(input_data)
 
-        # Make prediction
+        # Predict
         prediction = mlp_model.predict(input_scaled)[0][0]
-
-        # Determine churn likelihood
         churn_label = "Likely to Churn" if prediction >= 0.5 else "Not Likely to Churn"
 
         return f"Churn Probability: {prediction:.2f} — {churn_label}"
     except Exception as e:
         return f"Error during prediction: {str(e)}"
-    
-port = int(os.environ.get("PORT", 10000))
+
 
 # Run server
 if __name__ == '__main__':
     app.run(debug=True)
-    app.run_server(host="0.0.0.0", port=port)
