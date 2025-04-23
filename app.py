@@ -9,6 +9,7 @@ from sklearn.preprocessing import StandardScaler
 from tensorflow.keras.models import Sequential
 from tensorflow.keras.layers import Dense, Dropout
 import plotly.express as px
+import os
 
 # Path to CSV files
 csv_file_path = "churn-bigml-80.csv"
@@ -218,7 +219,10 @@ def predict_churn(n_clicks, al, ip, tc, tm, tcharge, csc):
         return f"Churn Probability: {prediction:.2f} — {churn_label}"
     except Exception as e:
         return f"Error during prediction: {str(e)}"
+    
+port = int(os.environ.get("PORT", 10000))
 
 # Run server
 if __name__ == '__main__':
     app.run(debug=True)
+    app.run_server(host="0.0.0.0", port=port)
